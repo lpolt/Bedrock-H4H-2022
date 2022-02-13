@@ -4,7 +4,13 @@ pragma solidity ^0.8.0;
 import "./Tripool.sol";
 import "./CurveInterface.sol";
 
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+
 contract Bedrock is ERC20 {
+	using SafeERC20 for IERC20;
+
 	address immutable Curve3Pool;
 
 	event successfulDeposit(
@@ -14,9 +20,9 @@ contract Bedrock is ERC20 {
 	);
 
 	event successfulWithdraw(
-		uint256 indexed daiAmount,
+		uint256 indexed lpAmount,
 		address indexed sender,
-		uint256 indexed lpAmount
+		uint256 indexed daiAmount
 	);
 
 	/**
@@ -42,7 +48,19 @@ contract Bedrock is ERC20 {
 		return lpAmount;
 	}
 
-	function withdraw(uint256 daiAmount) external returns(uint256 lpAmount) {
+	function withdraw(uint256 lpAmount) external returns(uint256 daiAmount) {
+		require(balanceOf(msg.sender) >= lpAmount, "Insufficient LP Token balance.");
+		address[3] memory stablecoins = Tripool.getStableCoins();
+		
+		uint256[3] memory minAmounts = [0, 0, 0];
+		uint256[3] amounts = CurveInterface(Curve3Pool).remove_liquidity(lpAmount, minAmounts);
 
+		for (uint256 i = 0; i < coins.length; i++) {
+			IERC20(stablecoins[i]).safeTransferFrom(address (this), msg.sender, amounts[i]);
+			IERC20(stablecoins[i]).safeApprove(Curve3Pool, amounts[i]);
+		}
+
+		emit successfulWithdraw(lpAmount, msg.sender, amounts[0]);
+		return amounts[0];
 	}
 }

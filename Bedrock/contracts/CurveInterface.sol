@@ -9,11 +9,11 @@ interface CurveInterface {
 	function fee() external view returns(uint256);
 
 	// calculate addition or reduction in token supply
-	function calc_token_amount(uint256[3] calldata amounts, bool deposit) external view returns(uint256);
+	function calc_token_amount(uint256[3] memory, bool) external view returns(uint256);
 	
 	// deposit coins into the pool
-	function add_liquidity(uint256[3] calldata amounts, uint256 min_mint_amount) external view returns(uint256);
+	function add_liquidity(uint256[3] memory, uint256) external view returns(uint256);
 
 	// withdraw coins from the pool
-	function remove_liquidity(uint256 _amount, uint256[3] calldata min_amounts) external view returns(uint256[3]);
+	function remove_liquidity(uint256, uint256[3] memory) external view returns(uint256[3]);
 }
